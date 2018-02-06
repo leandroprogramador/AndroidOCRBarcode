@@ -22,6 +22,8 @@ import android.widget.Toast;
 import com.google.android.gms.vision.Frame;
 import com.google.android.gms.vision.text.TextBlock;
 import com.google.android.gms.vision.text.TextRecognizer;
+import com.google.zxing.integration.android.IntentIntegrator;
+import com.google.zxing.integration.android.IntentResult;
 
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
@@ -29,9 +31,12 @@ import java.io.FileOutputStream;
 
 public class MainActivity extends AppCompatActivity {
     MyCamera myCamera;
-    ImageView imageView;
+    ImageView imageView, imageView2;
     TextView txtRecognizer;
     TextRecognizer recognizer;
+    IntentIntegrator integrator;
+    int SCAN_REQUEST_CODE = 49374;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,6 +44,8 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         myCamera = new MyCamera(MainActivity.this);
         imageView = findViewById(R.id.imageView);
+        imageView = findViewById(R.id.imageView);
+        imageView2 = findViewById(R.id.imageView2);
         txtRecognizer = findViewById(R.id.textView);
 
         recognizer = new TextRecognizer.Builder(getApplicationContext()).build();
@@ -52,6 +59,24 @@ public class MainActivity extends AppCompatActivity {
                 getPermissions();
             }
         });
+
+        imageView2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                scan();
+            }
+        });
+
+    }
+
+    private void scan() {
+        integrator = new IntentIntegrator(this);
+        integrator.setDesiredBarcodeFormats(IntentIntegrator.ALL_CODE_TYPES);
+        integrator.setPrompt("Scan");
+        integrator.setCameraId(0);
+        integrator.setBeepEnabled(false);
+        integrator.setBarcodeImageEnabled(false);
+        integrator.initiateScan();
     }
 
 
@@ -98,6 +123,21 @@ public class MainActivity extends AppCompatActivity {
 
             } catch (java.io.IOException e) {
                 Toast.makeText(getApplicationContext(), "Não foi possível capturar a foto!", Toast.LENGTH_LONG).show();
+            }
+        }
+
+        if(requestCode == SCAN_REQUEST_CODE){
+            IntentResult result = IntentIntegrator.parseActivityResult(requestCode, resultCode, data);
+            if(result != null){
+                if(result.getContents() == null){
+                    Toast.makeText(this, "Cancelled", Toast.LENGTH_LONG).show();
+                }
+                else{
+                    txtRecognizer.setText(result.getContents());
+                }
+            }
+            else{
+                super.onActivityResult(requestCode,resultCode,data);
             }
         }
 
